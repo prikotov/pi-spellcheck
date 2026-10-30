@@ -34,6 +34,17 @@ interface RuntimeState {
 	gate: boolean;
 }
 
+/** TUI захватывается из фабрики редактора: нужен, чтобы запросить
+ * перерисовку после setEditorText — сам setText этого не делает, а наши
+ * вызовы идут из promise-колбэков вне цикла ввода (иначе текст есть
+ * в состоянии, но не виден до следующего нажатия клавиши). */
+let activeTui: { requestRender(force?: boolean): void } | undefined;
+
+function restoreToEditor(ctx: ExtensionContext, text: string): void {
+	ctx.ui.setEditorText(text);
+	activeTui?.requestRender();
+}
+
 function dictionaryPaths(): { aff: string; dic: string }[] {
 	const here = (name: string) => fileURLToPath(new URL(`../dictionaries/${name}`, import.meta.url));
 	return [
@@ -158,9 +169,10 @@ export default function (pi: ExtensionAPI) {
 		checker.warmup();
 
 		if (ctx.hasUI) {
-			ctx.ui.setEditorComponent(
-				(tui, theme, kb) => new SpellEditor(tui, theme, kb, checker, state),
-			);
+			ctx.ui.setEditorComponent((tui, theme, kb) => {
+				activeTui = tui;
+				return new SpellEditor(tui, theme, kb, checker, state);
+			});
 		}
 	});
 
@@ -180,7 +192,7 @@ export default function (pi: ExtensionAPI) {
 		}
 		const fixed = await runFixDialog(text, checker, ctx);
 		if (!fixed.cancelled && fixed.text !== text) {
-			ctx.ui.setEditorText(fixed.text);
+			restoreToEditor(ctx, fixed.text);
 			ctx.ui.notify("Исправления применены", "info");
 		}
 	};
@@ -226,14 +238,14 @@ export default function (pi: ExtensionAPI) {
 		);
 		if (choice === undefined || choice === "Нет, вернуть в редактор") {
 			// Esc или «нет» — не отправлять, вернуть текст в редактор.
-			ctx.ui.setEditorText(event.text);
+			restoreToEditor(ctx, event.text);
 			return { action: "handled" };
 		}
 		if (choice === "Да, отправить как есть") return { action: "continue" };
 		const fixed = await runFixDialog(event.text, checker, ctx);
 		if (fixed.cancelled) {
 			// Esc в диалоге исправлений — отмена, текст возвращается в редактор.
-			ctx.ui.setEditorText(fixed.text);
+			restoreToEditor(ctx, fixed.text);
 			return { action: "handled" };
 		}
 		if (fixed.text !== event.text) return { action: "transform", text: fixed.text };
