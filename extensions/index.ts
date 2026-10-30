@@ -139,8 +139,13 @@ export default function (pi: ExtensionAPI) {
 		// Дictionaries take ~2s to load; keep them off the startup path.
 		setTimeout(() => {
 			checker?.load();
-			if (checker && !checker.isReady && ctx.hasUI) {
-				ctx.ui.notify("pi-spellcheck: не удалось загрузить словари", "warning");
+			if (checker && !checker.isReady) {
+				const message = "pi-spellcheck: не удалось загрузить словари";
+				if (ctx.hasUI) {
+					ctx.ui.notify(message, "warning");
+				} else {
+					console.error(message);
+				}
 			}
 		}, 100);
 
