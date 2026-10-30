@@ -125,10 +125,11 @@ test("underline preserves escape sequences", () => {
 	assert.ok(result.includes("\x1b_pi:fc\x07т\x1b_pi:/fc\x07ест"));
 });
 
-test("underline red color codes present", () => {
+test("underline red dashed codes present", () => {
 	assert.ok(UNDERLINE_ON.includes("\x1b[58;2;"), "underline color (SGR 58)");
-	assert.ok(UNDERLINE_ON.includes("\x1b[4:3m"), "curly underline (SGR 4:3)");
+	assert.ok(UNDERLINE_ON.includes("\x1b[4:5m"), "dashed underline (SGR 4:5)");
 	assert.ok(UNDERLINE_ON.includes("\x1b[4m"), "plain underline fallback (SGR 4)");
+	assert.ok(UNDERLINE_ON.indexOf("\x1b[4m") < UNDERLINE_ON.indexOf("\x1b[4:5m"), "styled underline must come after plain (last wins)");
 	assert.ok(UNDERLINE_OFF.includes("\x1b[59m"), "underline color reset (SGR 59)");
 });
 
