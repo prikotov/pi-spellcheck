@@ -1,6 +1,6 @@
 {
 	"name": "pi-spellcheck",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Живая проверка орфографии для pi coding agent: подчёркивание опечаток в редакторе, русский + английский, личные словари, проверка перед отправкой",
 	"license": "MIT",
 	"author": "Dmitry Prikotov",
