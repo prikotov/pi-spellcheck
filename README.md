@@ -78,6 +78,15 @@ dictionaries/         — ru_RU (BSD-3-Clause), en_US (MIT/LGPL)
 npm test   # node --test, 19 тестов: словари, эвристики, подчёркивание, замены
 ```
 
+## Почему в репозитории vendor/ и dictionaries/
+
+Пакет — самодостаточный: `pi install git:...` ничего не скачивает и не запускает npm-install, работает офлайн, а локальный запуск (`pi -e ./extensions/index.ts`) не требует установки зависимостей.
+
+- `vendor/nspell/` — nspell 2.1.5 (MIT), стабильная и почти не меняющаяся библиотека; обновляется вручную при необходимости.
+- `dictionaries/` — hunspell-словари ru_RU/en_US, обновляются вместе с выпусками wooorm/dictionaries.
+
+Если предпочитаешь классические npm-зависимости — перенеси nspell в `dependencies` package.json и удали `vendor/` (учти: тогда `pi -e` потребует ручного `npm install`).
+
 ## Лицензии
 
 - Код — MIT.
