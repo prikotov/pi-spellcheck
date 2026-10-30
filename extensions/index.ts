@@ -26,7 +26,8 @@ import {
 } from "../lib/settings.ts";
 
 const MAX_CHECK_LENGTH = 100_000; // огромные вставки не проверяем
-const MIN_GATE_LENGTH = 8; // короткие сообщения до gate не доводим
+const MIN_GATE_LENGTH = 2; // одно-двухбуквенное («да», «ок») пропускаем
+const GATE_CHECK_TIMEOUT_MS = 5_000; // потолок ожидания проверки при отправке
 
 interface RuntimeState {
 	underline: boolean;
@@ -190,31 +191,39 @@ export default function (pi: ExtensionAPI) {
 		handler: spellCheckHandler,
 	});
 
-	// Gate: перед отправкой предложить исправить опечатки.
+	// Gate: перед отправкой — проверка текста и явное подтверждение.
+	// Покрывает все пути отправки в pi: Enter (tui.input.submit) и
+	// Alt+Enter (app.message.followUp) оба проходят через событие input.
 	pi.on("input", async (event, ctx) => {
-		if (!state.gate || !checker?.isReady) return { action: "continue" };
+		if (!state.gate || !checker) return { action: "continue" };
 		if (event.source !== "interactive" || !ctx.hasUI) return { action: "continue" };
-		if (event.text.startsWith("/") || event.text.length < MIN_GATE_LENGTH) {
-			return { action: "continue" };
-		}
+		if (event.text.startsWith("/") || event.text.startsWith("!")) return { action: "continue" };
+		if (event.text.length < MIN_GATE_LENGTH) return { action: "continue" };
 		if (event.text.length > MAX_CHECK_LENGTH) return { action: "continue" };
-		const misspelled = await checker.checkText(event.text);
-		if (misspelled.length === 0) return { action: "continue" };
+
+		// Проверка идёт через воркер: если словари ещё грузятся — ждём их,
+		// а не пропускаем сообщение молча (гонка «быстро набрать и отправить»).
+		// Если проверка не уложилась в потолок — fail-open, не блокируем отправку.
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const misspelled = await Promise.race([
+			checker.checkText(event.text),
+			new Promise<null>((resolve) => {
+				timer = setTimeout(() => resolve(null), GATE_CHECK_TIMEOUT_MS);
+			}),
+		]);
+		if (timer) clearTimeout(timer);
+		if (!Array.isArray(misspelled) || misspelled.length === 0) return { action: "continue" };
 
 		const choice = await ctx.ui.select(
-			`Возможные опечатки: ${describeWords(misspelled)}`,
-			["Отправить как есть", "Исправить опечатки", "Вернуть в редактор"],
+			`В сообщении есть опечатки: ${describeWords(misspelled)}. Отправить несмотря на это?`,
+			["Да, отправить как есть", "Нет, исправить опечатки", "Нет, вернуть в редактор"],
 		);
-		if (choice === undefined) {
-			// Esc — не отправлять, вернуть текст в редактор.
+		if (choice === undefined || choice === "Нет, вернуть в редактор") {
+			// Esc или «нет» — не отправлять, вернуть текст в редактор.
 			ctx.ui.setEditorText(event.text);
 			return { action: "handled" };
 		}
-		if (choice === "Отправить как есть") return { action: "continue" };
-		if (choice === "Вернуть в редактор") {
-			ctx.ui.setEditorText(event.text);
-			return { action: "handled" };
-		}
+		if (choice === "Да, отправить как есть") return { action: "continue" };
 		const corrected = await runFixDialog(event.text, checker, ctx);
 		if (corrected !== event.text) return { action: "transform", text: corrected };
 		return { action: "continue" };
