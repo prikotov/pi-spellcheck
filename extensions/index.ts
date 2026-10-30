@@ -2,7 +2,7 @@
  * pi-spellcheck — проверка орфографии в редакторе pi (ru + en).
  *
  * - Живое подчёркивание опечаток прямо в редакторе ввода.
- * - alt+s (или ctrl+;) — диалог исправлений: варианты, «пропустить», «добавить в словарь».
+ * - Win+S (super+s; fallback alt+s, ctrl+;) — диалог исправлений: варианты, «пропустить», «добавить в словарь».
  * - Проверка перед отправкой (gate): если в сообщении есть опечатки, pi
  *   предложит исправить их до того, как сообщение уйдёт модели.
  * - Личные словари: ~/.pi/agent/spell-dict.txt (глобальный) и
@@ -159,8 +159,9 @@ export default function (pi: ExtensionAPI) {
 		}
 	});
 
-	// alt+s — проверить и исправить текст в редакторе (ctrl+; — альтернатива
-	// для терминалов, где alt+s занят; ctrl+; занят шрифтом в Ghostty).
+	// super+s (Win+S) — проверить и исправить текст в редакторе.
+	// Fallback'и для окружений, где Super перехвачен DE или недоставим:
+	// alt+s (Ghostty/Linux) и ctrl+; (клавиатурные схемы, где alt+s занят).
 	const spellCheckHandler = async (ctx: ExtensionContext) => {
 		if (!checker?.isReady || !ctx.hasUI) return;
 		const text = ctx.ui.getEditorText();
@@ -174,6 +175,10 @@ export default function (pi: ExtensionAPI) {
 			ctx.ui.notify("Исправления применены", "info");
 		}
 	};
+	pi.registerShortcut("super+s", {
+		description: "Проверить орфографию в редакторе",
+		handler: spellCheckHandler,
+	});
 	pi.registerShortcut("alt+s", {
 		description: "Проверить орфографию в редакторе",
 		handler: spellCheckHandler,
