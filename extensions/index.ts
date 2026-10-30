@@ -2,7 +2,7 @@
  * pi-spellcheck — проверка орфографии в редакторе pi (ru + en).
  *
  * - Живое подчёркивание опечаток прямо в редакторе ввода.
- * - ctrl+s — диалог исправлений: варианты, «пропустить», «добавить в словарь».
+ * - ctrl+; — диалог исправлений: варианты, «пропустить», «добавить в словарь».
  * - Проверка перед отправкой (gate): если в сообщении есть опечатки, pi
  *   предложит исправить их до того, как сообщение уйдёт модели.
  * - Личные словари: ~/.pi/agent/spell-dict.txt (глобальный) и
@@ -45,19 +45,22 @@ class SpellEditor extends CustomEditor {
 	private lastCheckedText: string | null = null;
 	private misspelled = new Set<string>();
 
+	// ВАЖНО: имена полей/параметров не должны перекрывать поля базового
+	// Editor (state, history, pastes…) — при define-for-class-fields
+	// затенение обнуляет состояние редактора.
 	constructor(
 		tui: ConstructorParameters<typeof CustomEditor>[0],
 		theme: ConstructorParameters<typeof CustomEditor>[1],
 		kb: ConstructorParameters<typeof CustomEditor>[2],
 		private readonly spell: SpellChecker | undefined,
-		private readonly state: RuntimeState,
+		private readonly runtime: RuntimeState,
 	) {
 		super(tui, theme, kb);
 	}
 
 	render(width: number): string[] {
 		const lines = super.render(width);
-		if (!this.state.underline || !this.spell?.isReady) return lines;
+		if (!this.runtime.underline || !this.spell?.isReady) return lines;
 		const text = this.getText();
 		if (text.length > MAX_CHECK_LENGTH) return lines;
 		if (text !== this.lastCheckedText) {
@@ -156,8 +159,8 @@ export default function (pi: ExtensionAPI) {
 		}
 	});
 
-	// ctrl+s — проверить и исправить текст в редакторе.
-	pi.registerShortcut("ctrl+s", {
+	// ctrl+; — проверить и исправить текст в редакторе.
+	pi.registerShortcut("ctrl+;", {
 		description: "Проверить орфографию в редакторе",
 		handler: async (ctx) => {
 			if (!checker?.isReady || !ctx.hasUI) return;
