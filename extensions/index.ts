@@ -59,13 +59,13 @@ class SpellEditor extends CustomEditor {
 
 	render(width: number): string[] {
 		const lines = super.render(width);
-		if (!this.runtime.underline || !this.spell?.isReady) return lines;
+		if (!this.runtime.underline || !this.spell) return lines;
 		const text = this.getText();
 		if (text.length > MAX_CHECK_LENGTH) return lines;
 		if (text !== this.lastCheckedText) {
 			this.lastCheckedText = text;
-			// Проверка асинхронная (воркер): текущий кадр рисуем с тем, что
-			// уже известно, а когда придёт ответ — перерисуем.
+			// Запрос ставим СРАЗУ, даже пока словари ещё грузятся в воркере:
+			// он ответит по готовности, и мы перерисуем уже набранный текст.
 			void this.spell.requestCheck(text).then(() => {
 				if (this.getText() === text) {
 					this.tui.requestRender();
