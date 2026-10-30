@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { SpellChecker, matchCase } from "../lib/checker.ts";
+import { SpellCore, matchCase } from "../lib/spell-core.ts";
 import { UNDERLINE_OFF, UNDERLINE_ON, underlineMisspelled } from "../lib/underline.ts";
 import { replaceWholeWord } from "../lib/replace.ts";
 import { extractWordOccurrences, splitCamelCase } from "../lib/tokenizer.ts";
@@ -10,7 +10,7 @@ import { extractWordOccurrences, splitCamelCase } from "../lib/tokenizer.ts";
 const here = (name) => fileURLToPath(new URL(`../dictionaries/${name}`, import.meta.url));
 
 function makeChecker() {
-	const checker = new SpellChecker({
+	const checker = new SpellCore({
 		dictionaries: [
 			{ aff: here("ru.aff"), dic: here("ru.dic") },
 			{ aff: here("en.aff"), dic: here("en.dic") },

@@ -43,7 +43,6 @@ function dictionaryPaths(): { aff: string; dic: string }[] {
 
 class SpellEditor extends CustomEditor {
 	private lastCheckedText: string | null = null;
-	private misspelled = new Set<string>();
 
 	// ВАЖНО: имена полей/параметров не должны перекрывать поля базового
 	// Editor (state, history, pastes…) — при define-for-class-fields
@@ -65,15 +64,22 @@ class SpellEditor extends CustomEditor {
 		if (text.length > MAX_CHECK_LENGTH) return lines;
 		if (text !== this.lastCheckedText) {
 			this.lastCheckedText = text;
-			this.misspelled = new Set(this.spell.misspelledInText(text));
+			// Проверка асинхронная (воркер): текущий кадр рисуем с тем, что
+			// уже известно, а когда придёт ответ — перерисуем.
+			void this.spell.requestCheck(text).then(() => {
+				if (this.getText() === text) {
+					this.tui.requestRender();
+				}
+			});
 		}
-		if (this.misspelled.size === 0) return lines;
+		const misspelled = this.spell.getSet(text);
+		if (!misspelled || misspelled.size === 0) return lines;
 		// Lines 1..renderedVisibleLineCount are editor content; 0 and the last
 		// line are borders, trailing lines belong to autocomplete.
 		const visible = (this as unknown as { renderedVisibleLineCount?: number }).renderedVisibleLineCount ?? 0;
 		const lastContent = Math.min(1 + visible, lines.length - 1);
 		for (let i = 1; i < lastContent; i++) {
-			lines[i] = underlineMisspelled(lines[i], this.misspelled);
+			lines[i] = underlineMisspelled(lines[i], misspelled);
 		}
 		return lines;
 	}
@@ -88,10 +94,10 @@ async function runFixDialog(
 	let current = original;
 	const skipped = new Set<string>();
 	for (;;) {
-		const words = spell.misspelledInText(current).filter((word) => !skipped.has(word));
+		const words = (await spell.checkText(current)).filter((word) => !skipped.has(word));
 		if (words.length === 0) break;
 		const word = words[0];
-		const suggestions = spell.suggest(word).map((suggestion) => matchCase(suggestion, word));
+		const suggestions = (await spell.suggest(word)).map((suggestion) => matchCase(suggestion, word));
 		const SKIP = "Пропустить";
 		const ADD_GLOBAL = "В словарь (глобальный)";
 		const ADD_PROJECT = "В словарь (проект)";
@@ -139,24 +145,20 @@ export default function (pi: ExtensionAPI) {
 			dictionaries: dictionaryPaths(),
 			userDictPaths: [globalDictPath(), projectDictPath(ctx.cwd)],
 		});
-		// Дictionaries take ~2s to load; keep them off the startup path.
-		setTimeout(() => {
-			checker?.load();
-			if (checker && !checker.isReady) {
-				const message = "pi-spellcheck: не удалось загрузить словари";
-				if (ctx.hasUI) {
-					ctx.ui.notify(message, "warning");
-				} else {
-					console.error(message);
-				}
-			}
-		}, 100);
+		// Словари грузятся в worker-потоке (~2с CPU), главный поток не
+		// блокируется: набирать текст можно сразу, подчёркивание доедет,
+		// когда воркер загрузится.
+		checker.warmup();
 
 		if (ctx.hasUI) {
 			ctx.ui.setEditorComponent(
 				(tui, theme, kb) => new SpellEditor(tui, theme, kb, checker, state),
 			);
 		}
+	});
+
+	pi.on("session_shutdown", () => {
+		checker?.dispose();
 	});
 
 	// super+s (Win+S) — проверить и исправить текст в редакторе.
@@ -196,7 +198,7 @@ export default function (pi: ExtensionAPI) {
 			return { action: "continue" };
 		}
 		if (event.text.length > MAX_CHECK_LENGTH) return { action: "continue" };
-		const misspelled = checker.misspelledInText(event.text);
+		const misspelled = await checker.checkText(event.text);
 		if (misspelled.length === 0) return { action: "continue" };
 
 		const choice = await ctx.ui.select(

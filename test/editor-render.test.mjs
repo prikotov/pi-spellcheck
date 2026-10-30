@@ -10,11 +10,11 @@ import { test } from "node:test";
 const PI_TUI = "/home/dp/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/components/editor.js";
 const { Editor } = await import(PI_TUI);
 const { UNDERLINE_ON, underlineMisspelled } = await import("../lib/underline.ts");
-const { SpellChecker } = await import("../lib/checker.ts");
+const { SpellCore } = await import("../lib/spell-core.ts");
 const { fileURLToPath } = await import("node:url");
 
 const dict = (n) => fileURLToPath(new URL(`../dictionaries/${n}`, import.meta.url));
-const spell = new SpellChecker({
+const spell = new SpellCore({
 	dictionaries: [
 		{ aff: dict("ru.aff"), dic: dict("ru.dic") },
 		{ aff: dict("en.aff"), dic: dict("en.dic") },
