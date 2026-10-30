@@ -86,12 +86,17 @@ class SpellEditor extends CustomEditor {
 	}
 }
 
-/** Interactive fix dialog. Returns the corrected text (or the original). */
+interface FixDialogResult {
+	text: string;
+	cancelled: boolean;
+}
+
+/** Interactive fix dialog. Esc — cancel everything, nothing is sent. */
 async function runFixDialog(
 	original: string,
 	spell: SpellChecker,
 	ctx: ExtensionContext,
-): Promise<string> {
+): Promise<FixDialogResult> {
 	let current = original;
 	const skipped = new Set<string>();
 	for (;;) {
@@ -107,7 +112,8 @@ async function runFixDialog(
 			`«${word}» — предложено ${words.length === 1 ? "1 исправление" : `исправлений осталось: ${words.length}`}`,
 			[...suggestions, SKIP, ADD_GLOBAL, ADD_PROJECT, DONE],
 		);
-		if (choice === undefined || choice === DONE) break; // Esc — завершить
+		if (choice === undefined) return { text: current, cancelled: true }; // Esc — назад в редактор
+		if (choice === DONE) break;
 		if (choice === ADD_GLOBAL) {
 			appendWord(globalDictPath(), word.toLowerCase());
 			spell.addUserWord(word);
@@ -124,7 +130,7 @@ async function runFixDialog(
 		}
 		current = replaceWholeWord(current, word, choice);
 	}
-	return current;
+	return { text: current, cancelled: false };
 }
 
 function describeWords(words: string[]): string {
@@ -172,9 +178,9 @@ export default function (pi: ExtensionAPI) {
 			ctx.ui.notify("Редактор пуст", "info");
 			return;
 		}
-		const corrected = await runFixDialog(text, checker, ctx);
-		if (corrected !== text) {
-			ctx.ui.setEditorText(corrected);
+		const fixed = await runFixDialog(text, checker, ctx);
+		if (!fixed.cancelled && fixed.text !== text) {
+			ctx.ui.setEditorText(fixed.text);
 			ctx.ui.notify("Исправления применены", "info");
 		}
 	};
@@ -224,8 +230,13 @@ export default function (pi: ExtensionAPI) {
 			return { action: "handled" };
 		}
 		if (choice === "Да, отправить как есть") return { action: "continue" };
-		const corrected = await runFixDialog(event.text, checker, ctx);
-		if (corrected !== event.text) return { action: "transform", text: corrected };
+		const fixed = await runFixDialog(event.text, checker, ctx);
+		if (fixed.cancelled) {
+			// Esc в диалоге исправлений — отмена, текст возвращается в редактор.
+			ctx.ui.setEditorText(fixed.text);
+			return { action: "handled" };
+		}
+		if (fixed.text !== event.text) return { action: "transform", text: fixed.text };
 		return { action: "continue" };
 	});
 
