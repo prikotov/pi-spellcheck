@@ -9,7 +9,7 @@ import { test } from "node:test";
 
 const PI_TUI = "/home/dp/.npm-global/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui/dist/components/editor.js";
 const { Editor } = await import(PI_TUI);
-const { underlineMisspelled } = await import("../lib/underline.ts");
+const { UNDERLINE_ON, underlineMisspelled } = await import("../lib/underline.ts");
 const { SpellChecker } = await import("../lib/checker.ts");
 const { fileURLToPath } = await import("node:url");
 
@@ -63,18 +63,18 @@ test("underline lands inside editor content, borders untouched", () => {
 	const editor = makeEditor("скажи превед другу", false);
 	const lines = renderWithUnderline(editor, 80);
 	const contentLine = lines[1];
-	assert.ok(contentLine.includes("\x1b[4m"), "underline applied to misspelled word");
+	assert.ok(contentLine.includes(UNDERLINE_ON), "underline applied to misspelled word");
 	assert.ok(!contentLine.includes("4mскажи\x1b"), "correct word not underlined");
-	const plain = contentLine.replace(/\x1b\[4m|\x1b\[24m/g, "");
+	const plain = contentLine.replace(/\x1b\[[0-9;:]*m/g, "");
 	assert.ok(plain.includes("скажи превед другу"), "text content preserved");
-	assert.ok(!lines[0].includes("\x1b[4m"), "top border untouched");
-	assert.ok(!lines[lines.length - 1].includes("\x1b[4m"), "bottom border untouched");
+	assert.ok(!lines[0].includes(UNDERLINE_ON), "top border untouched");
+	assert.ok(!lines[lines.length - 1].includes(UNDERLINE_ON), "bottom border untouched");
 });
 
 test("multiline text underlines on every line", () => {
 	const editor = makeEditor("превед здесь\nи тут превед тоже\nа тут всё хорошо", false);
 	const lines = renderWithUnderline(editor, 80);
-	const withUnderline = lines.filter((l) => l.includes("\x1b[4m"));
+	const withUnderline = lines.filter((l) => l.includes(UNDERLINE_ON));
 	assert.equal(withUnderline.length, 2, "both lines with 'превед' underlined");
 });
 
@@ -86,7 +86,7 @@ test("focused editor: cursor markers survive underlining", () => {
 	if (contentLine.includes("\x1b_pi:")) {
 		assert.ok(contentLine.includes("\x1b_pi:c\x07"), "cursor marker intact");
 	}
-	const stripped = contentLine.replace(/\x1b\[4m|\x1b\[24m/g, "");
+	const stripped = contentLine.replace(/\x1b\[[0-9;:]*m/g, "");
 	assert.ok(stripped.includes("скажи"), "text preserved with cursor");
 });
 

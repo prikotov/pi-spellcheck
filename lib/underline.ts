@@ -7,9 +7,16 @@
  * the escape sequences — so cursor markers, colors and padding stay intact.
  */
 
-/** SGR 4 = underline on, SGR 24 = underline off (color state preserved). */
-const UNDERLINE_ON = "\x1b[4m";
-const UNDERLINE_OFF = "\x1b[24m";
+/**
+ * Красное подчёркивание опечаток, как в браузерах.
+ *
+ * SGR 58 задаёт цвет линии подчёркивания (#ff4040); на терминалах без
+ * поддержки он игнорируется и линия будет цветом текста. SGR 4:3 —
+ * волнистая линия (Ghostty, kitty, wezterm, свежие VTE); рядом дублируем
+ * обычный SGR 4 как fallback, чтобы подчёркивание оставалось везде.
+ */
+export const UNDERLINE_ON = "\x1b[58;2;255;64;64m\x1b[4:3m\x1b[4m";
+export const UNDERLINE_OFF = "\x1b[24m\x1b[59m";
 
 const ESC = "\x1b";
 

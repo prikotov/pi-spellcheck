@@ -2,7 +2,7 @@
  * pi-spellcheck — проверка орфографии в редакторе pi (ru + en).
  *
  * - Живое подчёркивание опечаток прямо в редакторе ввода.
- * - ctrl+; — диалог исправлений: варианты, «пропустить», «добавить в словарь».
+ * - alt+s (или ctrl+;) — диалог исправлений: варианты, «пропустить», «добавить в словарь».
  * - Проверка перед отправкой (gate): если в сообщении есть опечатки, pi
  *   предложит исправить их до того, как сообщение уйдёт модели.
  * - Личные словари: ~/.pi/agent/spell-dict.txt (глобальный) и
@@ -159,22 +159,28 @@ export default function (pi: ExtensionAPI) {
 		}
 	});
 
-	// ctrl+; — проверить и исправить текст в редакторе.
+	// alt+s — проверить и исправить текст в редакторе (ctrl+; — альтернатива
+	// для терминалов, где alt+s занят; ctrl+; занят шрифтом в Ghostty).
+	const spellCheckHandler = async (ctx: ExtensionContext) => {
+		if (!checker?.isReady || !ctx.hasUI) return;
+		const text = ctx.ui.getEditorText();
+		if (!text.trim()) {
+			ctx.ui.notify("Редактор пуст", "info");
+			return;
+		}
+		const corrected = await runFixDialog(text, checker, ctx);
+		if (corrected !== text) {
+			ctx.ui.setEditorText(corrected);
+			ctx.ui.notify("Исправления применены", "info");
+		}
+	};
+	pi.registerShortcut("alt+s", {
+		description: "Проверить орфографию в редакторе",
+		handler: spellCheckHandler,
+	});
 	pi.registerShortcut("ctrl+;", {
 		description: "Проверить орфографию в редакторе",
-		handler: async (ctx) => {
-			if (!checker?.isReady || !ctx.hasUI) return;
-			const text = ctx.ui.getEditorText();
-			if (!text.trim()) {
-				ctx.ui.notify("Редактор пуст", "info");
-				return;
-			}
-			const corrected = await runFixDialog(text, checker, ctx);
-			if (corrected !== text) {
-				ctx.ui.setEditorText(corrected);
-				ctx.ui.notify("Исправления применены", "info");
-			}
-		},
+		handler: spellCheckHandler,
 	});
 
 	// Gate: перед отправкой предложить исправить опечатки.

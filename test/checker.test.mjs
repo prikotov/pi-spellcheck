@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { SpellChecker, matchCase } from "../lib/checker.ts";
-import { underlineMisspelled } from "../lib/underline.ts";
+import { UNDERLINE_OFF, UNDERLINE_ON, underlineMisspelled } from "../lib/underline.ts";
 import { replaceWholeWord } from "../lib/replace.ts";
 import { extractWordOccurrences, splitCamelCase } from "../lib/tokenizer.ts";
 
@@ -110,8 +110,8 @@ test("underline plain line", () => {
 	const misspelled = new Set(["превед"]);
 	const line = "скажи превед миру";
 	const result = underlineMisspelled(line, misspelled);
-	assert.ok(result.includes("\x1b[4mпревед\x1b[24m"));
-	assert.equal(result.replace(/\x1b\[4m|\x1b\[24m/g, ""), line);
+	assert.ok(result.includes(UNDERLINE_ON + "превед" + UNDERLINE_OFF));
+	assert.equal(result.replace(/\x1b\[[0-9;:]*m/g, ""), line);
 });
 
 test("underline preserves escape sequences", () => {
@@ -120,17 +120,24 @@ test("underline preserves escape sequences", () => {
 	const result = underlineMisspelled(line, misspelled);
 	assert.ok(result.includes("\x1b[38;2;233;137;115mскажи\x1b[0m"));
 	assert.ok(result.includes("\x1b_pi:fc\x07"));
-	assert.ok(result.includes("\x1b[4mпревед\x1b[24m"));
-	// The word "тест" is split by the fake cursor, so it must not be touched.
+	assert.ok(result.includes(UNDERLINE_ON + "превед" + UNDERLINE_OFF));
+	// Слово "тест" разбито фейковым курсором, его не трогаем.
 	assert.ok(result.includes("\x1b_pi:fc\x07т\x1b_pi:/fc\x07ест"));
+});
+
+test("underline red color codes present", () => {
+	assert.ok(UNDERLINE_ON.includes("\x1b[58;2;"), "underline color (SGR 58)");
+	assert.ok(UNDERLINE_ON.includes("\x1b[4:3m"), "curly underline (SGR 4:3)");
+	assert.ok(UNDERLINE_ON.includes("\x1b[4m"), "plain underline fallback (SGR 4)");
+	assert.ok(UNDERLINE_OFF.includes("\x1b[59m"), "underline color reset (SGR 59)");
 });
 
 test("underline does not flag m inside escape sequences", () => {
 	const line = "\x1b[38;2;233;137;115mцвет\x1b[0m";
 	const result = underlineMisspelled(line, new Set(["цвет"]));
-	assert.ok(result.includes("\x1b[4mцвет\x1b[24m"));
+	assert.ok(result.includes(UNDERLINE_ON + "цвет" + UNDERLINE_OFF));
 	// No underline inserted inside the sequence itself.
-	assert.ok(!result.includes("115;\x1b[4m"));
+	assert.ok(!result.includes("115;" + UNDERLINE_ON));
 });
 
 test("tokenizer extracts words from noisy text", () => {
