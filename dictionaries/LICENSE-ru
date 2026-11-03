@@ -1,38 +1,249 @@
-* Copyright (c) 1997-2008, Alexander I. Lebedev
+Mozilla Public License Version 2.0
+==================================
 
-Modifications:
-------------------------------------------------------------------
-2012-08-24: Laszlo Nemeth (nemeth at numbertext org)
-* ru_RU.aff: add TRY line for better suggestions
-  (fix fdo#35001, reported by sasha.libreoffice at gmail)
+1. Definitions
+--------------
 
-Copyright:
-------------------------------------------------------------------
-* Copyright (c) 1997-2008, Alexander I. Lebedev
+1.1. “Contributor”
+    means each individual or legal entity that creates, contributes to
+    the creation of, or owns Covered Software.
 
-All rights reserved.
+1.2. “Contributor Version”
+    means the combination of the Contributions of others (if any) used
+    by a Contributor and that particular Contributor’s Contribution.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in the
-  documentation and/or other materials provided with the distribution.
-* Modified versions must be clearly marked as such.
-* The name of Alexander I. Lebedev may not be used to endorse or promote
-  products derived from this software without specific prior written
-  permission.
+1.3. “Contribution”
+    means Covered Software of a particular Contributor.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+1.4. “Covered Software”
+    means Source Code Form to which the initial Contributor has attached
+    the notice in Exhibit A-B, Executable Form of that Source Code Form,
+    and Modifications of any Source Code Form, in each case including
+    portions thereof.
+
+1.5. “Incompatible With Secondary Licenses”
+    means
+
+    (a) that the initial Contributor has attached the notice described
+        in Exhibit B to the Covered Software; or
+
+    (b) that the Covered Software was made available under the terms of
+        version 1.1 or earlier of the Mozilla Public License and did
+        not have a notice described in Exhibit B when the Covered
+        Software was made available.
+
+1.6. “Executable Form”
+    means any form of the work other than Source Code Form.
+
+1.7. “Larger Work”
+    means a work that combines Covered Software with other material, in
+    a separate file or files, that is not Covered Software.
+
+1.8. “License”
+    means this document.
+
+1.9. “Licensable”
+    means having the right to grant, to the maximum extent possible,
+    whether at the time of the initial grant or subsequently acquired,
+    any and all of the rights conveyed herein.
+
+1.10. “Modifications”
+    means any of the following:
+
+    (a) any file in Source Code Form that results from an addition to,
+        deletion from, or modification of the contents of Covered
+        Software; or
+
+    (b) any new file in Source Code Form that contains any Covered
+        Software.
+
+1.11. “Patent Claims” of a Contributor
+    means any patent claim(s), including without limitation, method,
+    process, and apparatus claims, in any patent Licensable by such
+    Contributor that would be infringed, but for the grant of the
+    License, by the making, using, selling, offering for sale, having
+    made, import, or transfer of either its Contributions or its
+    Contributor Version.
+
+1.12. “Secondary License”
+    means either the GNU General Public License, Version 2.0, the GNU
+    Lesser General Public License, Version 2.1, the GNU Affero General
+    Public License, Version 3.0, or any later versions of those
+    licenses.
+
+1.13. “Source Code Form”
+    means the form of the work preferred for making modifications.
+
+1.14. “You” (or “Your”)
+    means an individual or a legal entity exercising rights under this
+    License. For legal entities, “You” includes any entity that
+    controls, is controlled by, or is under common control with You.
+    For purposes of this definition, “control” means (a) the power,
+    direct or indirect, to cause the direction or management of such
+    entity, whether by contract or otherwise, or (b) ownership of more
+    than fifty percent (50%) of the outstanding shares or beneficial
+    ownership of such entity.
+
+2. License Grants and Conditions
+--------------------------------
+
+2.1. Grants
+
+    Each Contributor hereby grants You a world-wide, royalty-free,
+    non-exclusive license:
+
+    (a) under intellectual property rights (other than patent or
+        trademark) Licensable by such Contributor to use, reproduce,
+        make available, and have made, sell, offer for sale, import,
+        and/or otherwise dispose of its Contribution, if any, in the
+        Covered Software; and
+
+    (b) under Patent Claims of such Contributor to make, have made,
+        use, offer for sale, sell, import, and/or otherwise dispose of
+        its Contribution in the Covered Software.
+
+    This License does not grant any rights in the trademarks, service
+    marks, or logos of any Contributor (except as may be necessary to
+    comply with the notice requirements in Section 3.4).
+
+2.2. Contributor Grant
+
+    Subject to the terms of this License, each Contributor hereby
+    grants to You a non-exclusive, worldwide, royalty-free patent
+    license under such Contributor's Contributions in the Covered
+    Software to make, have made, use, offer for sale, sell, import and
+    otherwise transfer the Covered Software.
+
+2.3. Conditions
+
+    Your license grant under this License is expressly made subject to
+    and conditioned on the following:
+
+    (a) Your Covered Software must be licensed under the terms of this
+        License. Any license under any other license terms, express or
+        implied, with respect to the Covered Software is void.
+
+    (b) You must retain, in the Source Code Form of any Modifications
+        that You distribute, all copyright, patent, trademark, and
+        attribution notices from the Source Code Form of the Covered
+        Software, excluding those notices that do not pertain to any
+        part of the Modifications; and
+
+    (c) You must license the Covered Software under the terms of this
+        License.
+
+    (d) If the Covered Software is Incompatible With Secondary
+        Licenses, and You distribute the Covered Software, then You
+        must, upon request, make the Source Code Form of the Covered
+        Software available to recipients of the Covered Software, in a
+        manner that satisfies the requirements of this License.
+
+3. Additional Terms
+-------------------
+
+3.1. Intellectual Property
+
+    Each Contributor hereby grants You a non-exclusive, worldwide,
+    royalty-free patent license under such Contributor's Contributions
+    in the Covered Software to make, have made, use, offer for sale,
+    sell, import and otherwise transfer the Covered Software.
+
+3.2. Trademarks
+
+    This License does not grant permission to use the trade names,
+    trademarks, service marks, or product names of the Licensor,
+    except as required for reasonable and customary use in describing
+    the origin of the Covered Software and reproducing the content of
+    the notice in Exhibit A-B.
+
+3.3. Warranty
+
+    Each Contributor warrants that it has sufficient rights to grant
+    the rights to its Contribution conveyed by this License.
+
+3.4. Notices
+
+    You may not remove or alter the subject matter of any license
+    notices (including copyright notices, patent notices, disclaimers
+    of warranty, or limitations of liability) contained within the
+    Source Code Form of the Covered Software, except that You may
+    remove or alter any such notices if You have received express
+    permission to do so from the copyright holders, or if the notices
+    have been altered by a party other than the initial Contributor.
+
+4. Inability to Comply Due to Statute or Regulation
+---------------------------------------------------
+
+    If it is impossible for You to comply with any of the terms of this
+    License with respect to some or all of the Covered Software due to
+    statute, judicial order, or regulation, then You cannot use,
+    distribute, or redistribute the Covered Software in any manner.
+
+5. Termination
+--------------
+
+5.1. The rights granted under this License will terminate
+    automatically if You fail to comply with any of its terms in any
+    material respect, and such failure is not cured within thirty (30)
+    days after You become aware of the failure. The terminations in
+    this Section are in addition to any other rights and remedies that
+    may be available to the initial Contributor.
+
+5.2. If You assert a patent infringement claim against the initial
+    Contributor or against a Contributor alleging that its Contribution
+    infringes, then any patent licenses granted under this License to
+    that Contributor shall terminate upon sixty (60) days' notice
+    unless the claim is withdrawn.
+
+6. Disclaimer of Warranty
+-------------------------
+
+    Covered Software is provided under this License on an “as is”
+    basis, without warranty of any kind, either expressed, implied, or
+    statutory, including, without limitation, warranties that the
+    Covered Software is free of defects, merchantable, fit for a
+    particular purpose or non-infringing. The entire risk as to the
+    quality and performance of the Covered Software is with You.
+
+7. Limitation of Liability
+--------------------------
+
+    Under no circumstances and under no legal theory, whether tort
+    (including negligence), contract, or otherwise, unless required by
+    applicable law (such as deliberate and grossly negligent acts) or
+    agreed to in writing, shall any Contributor be liable to You for
+    damages, including any direct, indirect, special, incidental, or
+    consequential damages of any character arising as a result of this
+    License or out of the use or inability to use the Covered Software
+    (including but not limited to damages for loss of goodwill, work
+    stoppage, computer failure or malfunction, or any and all other
+    commercial damages or losses), even if such Contributor has been
+    advised of the possibility of such damages.
+
+8. Litigation
+-------------
+
+    Any litigation relating to this License may be brought only in the
+    courts of a jurisdiction where the defendant maintains its principal
+    place of business and such litigation shall be governed by laws of
+    that jurisdiction, without reference to its conflict-of-law
+    provisions.
+
+9. Miscellaneous
+----------------
+
+    This License represents the complete agreement concerning the
+    subject matter hereof. If any provision of this License is held to
+    be unenforceable, such provision shall be reformed only to the
+    extent necessary to make it enforceable.
+
+-----------------------------------------------------
+Russian dictionary (ru.aff, ru.dic)
+
+Copyright (c) 2026 Valery Ledovskoy
+Source: https://github.com/Goudron/ru-spelling-dictionary (v1.0.9)
+Based on multiple open Russian word lists; see upstream README for
+the full list of sources and validation methodology.
+
+Distributed under the terms of the Mozilla Public License, v. 2.0,
+converted from KOI8-R to UTF-8 for use with nspell.

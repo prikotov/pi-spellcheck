@@ -345,3 +345,10 @@ and Australian word list.  It is under the following copyright:
 
 Build Date: Mon Dec  7 20:19:27 EST 2020
 Wordlist Command: mk-list --accents=strip en_US 60
+
+-----------------------------------------------------
+pi-spellcheck ships the en_US-large variant (SCOWL size 70, more
+word coverage than the standard size-60 build) built from the same
+SCOWL 2020.12.07 sources:
+
+Wordlist Command: mk-list -v1 --accents=both en_US 70
