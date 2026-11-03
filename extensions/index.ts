@@ -45,12 +45,17 @@ function restoreToEditor(ctx: ExtensionContext, text: string): void {
 	activeTui?.requestRender();
 }
 
-function dictionaryPaths(): { aff: string; dic: string }[] {
+function dictionaryPaths(): { aff: string; dic: string; lang: "ru" | "en" }[] {
 	const here = (name: string) => fileURLToPath(new URL(`../dictionaries/${name}`, import.meta.url));
 	return [
-		{ aff: here("ru.aff"), dic: here("ru.dic") },
-		{ aff: here("en.aff"), dic: here("en.dic") },
+		{ aff: here("ru.aff"), dic: here("ru.dic"), lang: "ru" as const },
+		{ aff: here("en.aff"), dic: here("en.dic"), lang: "en" as const },
 	];
+}
+
+/** Пакетный список современных технических слов, которых нет в hunspell-словарях. */
+function techWordList(): string {
+	return fileURLToPath(new URL("../dictionaries/tech.txt", import.meta.url));
 }
 
 class SpellEditor extends CustomEditor {
@@ -162,6 +167,7 @@ export default function (pi: ExtensionAPI) {
 		checker = new SpellChecker({
 			dictionaries: dictionaryPaths(),
 			userDictPaths: [globalDictPath(), projectDictPath(ctx.cwd)],
+			wordLists: [techWordList()],
 		});
 		// Словари грузятся в worker-потоке (~2с CPU), главный поток не
 		// блокируется: набирать текст можно сразу, подчёркивание доедет,

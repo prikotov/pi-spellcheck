@@ -3,7 +3,7 @@
  * потока pi, чтобы загрузка словарей (~2с CPU) не блокировала ввод.
  *
  * Протокол (workerData):
- *   { dictionaries: [{aff, dic}], userDictPaths: string[] }
+ *   { dictionaries: [{aff, dic, lang?}], userDictPaths: string[], wordLists: string[] }
  * Сообщения (id > 0 — запрос/ответ, id === -1 — ready-сигнал):
  *   → { id, type: "check",   text }        ← { id, payload: string[] }
  *   → { id, type: "suggest", word }        ← { id, payload: string[] }
@@ -15,10 +15,10 @@
 import { parentPort, workerData } from "node:worker_threads";
 import { SpellCore } from "../lib/spell-core.ts";
 
-const { dictionaries, userDictPaths } = workerData;
+const { dictionaries, userDictPaths, wordLists } = workerData;
 
 // Загрузка блокирует только этот поток.
-const core = new SpellCore({ dictionaries, userDictPaths });
+const core = new SpellCore({ dictionaries, userDictPaths, wordLists });
 core.load();
 
 const port = parentPort;

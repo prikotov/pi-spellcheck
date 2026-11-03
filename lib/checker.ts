@@ -21,6 +21,8 @@ export interface SpellCheckerOptions {
 	dictionaries: DictionarySpec[];
 	/** One word per line, `#` comments allowed. */
 	userDictPaths: string[];
+	/** Bundled extra word lists (e.g. tech.txt), same format as user dicts. */
+	wordLists?: string[];
 }
 
 const CACHE_LIMIT = 48;
@@ -62,6 +64,7 @@ export class SpellChecker {
 				workerData: {
 					dictionaries: this.options.dictionaries,
 					userDictPaths: this.options.userDictPaths,
+					wordLists: this.options.wordLists ?? [],
 				},
 			});
 			worker.on("message", (message: { id: number; payload?: unknown; error?: string }) => {

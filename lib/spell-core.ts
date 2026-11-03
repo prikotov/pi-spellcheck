@@ -3,6 +3,10 @@
  * with Russian and English dictionaries, plus user dictionaries.
  *
  * Design notes:
+ * - nspell cannot merge dictionaries with different .aff files (its
+ *   dictionary() method ignores the second aff argument and parses new
+ *   words with the constructor's affix rules). So each language gets its
+ *   own NSpell instance, and a word is correct if ANY instance accepts it.
  * - Dictionary load is slow (~2s), so it happens lazily/off the startup path.
  *   Until loaded, everything is considered correctly spelled.
  * - Results are cached per raw word; the cache doubles as the hot path for
@@ -42,19 +46,24 @@ interface NSpellConstructor {
 export interface DictionarySpec {
 	aff: string;
 	dic: string;
+	/** Language hint used to route suggest() by word script. */
+	lang?: "ru" | "en";
 }
 
 export interface SpellCheckerOptions {
 	dictionaries: DictionarySpec[];
 	/** One word per line, `#` comments allowed. */
 	userDictPaths: string[];
+	/** Bundled extra word lists (e.g. tech.txt), same format as user dicts. */
+	wordLists?: string[];
 }
 
 const MAX_CACHE_SIZE = 20_000;
 const ACRONYM_MAX_LEN = 5;
 
 export class SpellCore {
-	private spell: NSpellInstance | null = null;
+	/** One nspell instance per language dictionary. */
+	private spells: NSpellInstance[] = [];
 	private loadFailed = false;
 	/** Lowercase dictionary stems, indexed by first letter (for prefix checks). */
 	private stemsByLetter = new Map<string, Set<string>>();
@@ -71,31 +80,29 @@ export class SpellCore {
 
 	/** Load dictionaries. Blocking (~2s). Safe to call again via reload(). */
 	load(): void {
-		if (this.spell || this.loadFailed) return;
+		if (this.spells.length > 0 || this.loadFailed) return;
 		try {
-			const [first, ...rest] = this.options.dictionaries;
-			this.spell = new NSpell(readFileSync(first.aff), readFileSync(first.dic));
-			for (const dict of rest) {
-				this.spell.dictionary(readFileSync(dict.dic), readFileSync(dict.aff));
-			}
 			for (const dict of this.options.dictionaries) {
+				// Отдельный инстанс на язык: dictionary() у nspell игнорирует
+				// второй аргумент (.aff) и ломает аффиксы первого словаря.
+				this.spells.push(new NSpell(readFileSync(dict.aff), readFileSync(dict.dic)));
 				this.indexStems(readFileSync(dict.dic, "utf8"));
 			}
-			for (const path of this.options.userDictPaths) {
+			for (const path of [...this.options.wordLists ?? [], ...this.options.userDictPaths]) {
 				this.loadUserDict(path);
 			}
 		} catch {
 			this.loadFailed = true;
-			this.spell = null;
+			this.spells = [];
 		}
 	}
 
 	get isReady(): boolean {
-		return this.spell !== null;
+		return this.spells.length > 0;
 	}
 
 	reload(): void {
-		this.spell = null;
+		this.spells = [];
 		this.loadFailed = false;
 		this.stemsByLetter = new Map();
 		this.userWords = new Set();
@@ -145,8 +152,10 @@ export class SpellCore {
 
 	private isCorrect(word: string): boolean {
 		if (this.userWords.has(word.toLowerCase())) return true;
-		if (!this.spell) return true;
-		return this.spell.correct(word);
+		if (this.spells.length === 0) return true;
+		// Слово считается правильным, если его приняла любая языковая
+		// морфология (латиница может встретиться и в русском тексте и наоборот).
+		return this.spells.some((spell) => spell.correct(word));
 	}
 
 	/** True when the word is a prefix of some known dictionary stem. */
@@ -170,7 +179,7 @@ export class SpellCore {
 
 	/** Heuristic + dictionary check for one word. True = misspelled. */
 	isMisspelled(raw: string): boolean {
-		if (!this.spell) return false;
+		if (this.spells.length === 0) return false;
 		const cached = this.correctCache.get(raw);
 		if (cached !== undefined) return cached;
 		const result = this.computeMisspelled(raw);
@@ -221,13 +230,24 @@ export class SpellCore {
 
 	/** Spelling suggestions for a word (best effort, hunspell-like). */
 	suggest(word: string): string[] {
-		if (!this.spell) return [];
+		if (this.spells.length === 0) return [];
 		const key = word.toLowerCase();
 		const cached = this.suggestCache.get(key);
 		if (cached) return cached;
 		let suggestions: string[] = [];
 		try {
-			suggestions = this.spell.suggest(key).slice(0, 8);
+			// Сначала морфология языка слова, иначе чужие словари дают мусор:
+			// латиница → en, кириллица → ru.
+			const lang: "ru" | "en" = HAS_CYRILLIC.test(key) ? "ru" : "en";
+			const primary = this.spellsOf(lang);
+			const secondary = this.spells.filter((spell) => !primary.includes(spell));
+			for (const spell of [...primary, ...secondary]) {
+				if (suggestions.length >= 8) break;
+				for (const item of spell.suggest(key)) {
+					if (suggestions.length >= 8) break;
+					if (!suggestions.includes(item)) suggestions.push(item);
+				}
+			}
 		} catch {
 			suggestions = [];
 		}
@@ -235,9 +255,17 @@ export class SpellCore {
 		return suggestions;
 	}
 
+	private spellsOf(lang: "ru" | "en"): NSpellInstance[] {
+		const result: NSpellInstance[] = [];
+		this.options.dictionaries.forEach((dict, i) => {
+			if ((dict.lang ?? "en") === lang) result.push(this.spells[i]);
+		});
+		return result;
+	}
+
 	/** All misspelled words in the text, in order of first occurrence. */
 	misspelledInText(text: string): string[] {
-		if (!this.spell) return [];
+		if (this.spells.length === 0) return [];
 		const seen = new Set<string>();
 		const result: string[] = [];
 		for (const { word } of extractWordOccurrences(text)) {
