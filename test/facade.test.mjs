@@ -22,19 +22,19 @@ test("async facade: worker check, suggest, addWord", async () => {
 		}
 		assert.equal(spell.isReady, true, "worker became ready");
 
-		const words = await spell.checkText("Папраить файл конфига, превед мир");
-		assert.deepEqual(words, ["Папраить", "конфига", "превед"]);
+		const words = await spell.checkText("Папраить файл конфега, превет мир");
+		assert.deepEqual(words, ["Папраить", "конфега", "превет"]);
 
 		// Кеш для синхронного рендера
-		const set = spell.getSet("Папраить файл конфига, превед мир");
+		const set = spell.getSet("Папраить файл конфега, превет мир");
 		assert.ok(set instanceof Set && set.size === 3);
 
-		const suggestions = await spell.suggest("превед");
+		const suggestions = await spell.suggest("превет");
 		assert.ok(Array.isArray(suggestions));
 
-		spell.addUserWord("гитхаб");
-		const words2 = await spell.checkText("гитхаб превед");
-		assert.deepEqual(words2, ["превед"]);
+		spell.addUserWord("суперслово");
+		const words2 = await spell.checkText("суперслово превет");
+		assert.deepEqual(words2, ["превет"]);
 	} finally {
 		spell.dispose();
 	}

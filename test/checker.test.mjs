@@ -12,10 +12,11 @@ const here = (name) => fileURLToPath(new URL(`../dictionaries/${name}`, import.m
 function makeChecker() {
 	const checker = new SpellCore({
 		dictionaries: [
-			{ aff: here("ru.aff"), dic: here("ru.dic") },
-			{ aff: here("en.aff"), dic: here("en.dic") },
+			{ aff: here("ru.aff"), dic: here("ru.dic"), lang: "ru" },
+			{ aff: here("en.aff"), dic: here("en.dic"), lang: "en" },
 		],
 		userDictPaths: [],
+		wordLists: [here("tech.txt")],
 	});
 	checker.load();
 	return checker;
@@ -31,20 +32,36 @@ test("russian words", () => {
 	assert.equal(spell.isMisspelled("привет"), false);
 	assert.equal(spell.isMisspelled("Понедельник"), false);
 	assert.equal(spell.isMisspelled("раскладка"), false);
-	assert.equal(spell.isMisspelled("превед"), true);
+	assert.equal(spell.isMisspelled("превет"), true);
 	assert.equal(spell.isMisspelled("папраить"), true);
 });
 
 test("caps and case handling", () => {
 	assert.equal(spell.isMisspelled("Привет"), false);
 	assert.equal(spell.isMisspelled("ПОПРАВИТЬ"), false);
-	assert.equal(spell.isMisspelled("Превед"), true);
+	assert.equal(spell.isMisspelled("Превет"), true);
 });
 
 test("english words", () => {
 	assert.equal(spell.isMisspelled("hello"), false);
 	assert.equal(spell.isMisspelled("teh"), true);
 	assert.equal(spell.isMisspelled("recieve"), true);
+});
+
+test("english inflections through own affixes (multi-dict bug)", () => {
+	// Регрессия: при объединении словарей в один nspell английские слова
+	// парсились русскими аффиксами — стем проходил, а формы нет.
+	assert.equal(spell.isMisspelled("extension"), false);
+	assert.equal(spell.isMisspelled("extensions"), false);
+	assert.equal(spell.isMisspelled("work"), false);
+	assert.equal(spell.isMisspelled("works"), false);
+	assert.equal(spell.isMisspelled("running"), false);
+});
+
+test("tech supplement words", () => {
+	assert.equal(spell.isMisspelled("async"), false);
+	assert.equal(spell.isMisspelled("codebase"), false);
+	assert.equal(spell.isMisspelled("монорепо"), false);
 });
 
 test("acronyms are skipped", () => {
@@ -78,15 +95,15 @@ test("typing prefixes are not flagged", () => {
 });
 
 test("user dictionary", () => {
-	assert.equal(spell.isMisspelled("гитхаб"), true);
-	spell.addUserWord("гитхаб");
-	assert.equal(spell.isMisspelled("гитхаб"), false);
-	assert.equal(spell.isMisspelled("Гитхаб"), false);
+	assert.equal(spell.isMisspelled("суперслово"), true);
+	spell.addUserWord("суперслово");
+	assert.equal(spell.isMisspelled("суперслово"), false);
+	assert.equal(spell.isMisspelled("Суперслово"), false);
 });
 
 test("misspelledInText returns unique words in order", () => {
-	const text = "Папраить файл конфига, превед мир и снова папраить";
-	assert.deepEqual(spell.misspelledInText(text), ["Папраить", "конфига", "превед", "папраить"]);
+	const text = "Папраить файл конфега, превет мир и снова папраить";
+	assert.deepEqual(spell.misspelledInText(text), ["Папраить", "конфега", "превет", "папраить"]);
 });
 
 test("suggest returns options", () => {
@@ -143,5 +160,20 @@ test("underline does not flag m inside escape sequences", () => {
 
 test("tokenizer extracts words from noisy text", () => {
 	const words = extractWordOccurrences("поправить src/config.json — файл /tmp/x1 API_версия").map((w) => w.word);
-	assert.deepEqual(words, ["поправить", "src", "config", "json", "файл", "tmp", "API", "версия"]);
+	// Пути и имена файлов (src/config.json, /tmp/x1) пропускаются целиком.
+	assert.deepEqual(words, ["поправить", "файл", "API", "версия"]);
+});
+
+test("tokenizer skips urls, emails, domains and handles", () => {
+	const words = extractWordOccurrences(
+		"глянь https://github.com/pi-coding-agent/tree и напиши на me@example.com, ещё погугли nodejs.org и спроси @durov",
+	).map((w) => w.word);
+	// Однобуквенные «и» отсекаются ещё до skip-регионов (word.length < 2).
+	assert.deepEqual(words, ["глянь", "напиши", "на", "ещё", "погугли", "спроси"]);
+});
+
+test("tokenizer keeps prose around skipped regions", () => {
+	const words = extractWordOccurrences("Отправь мне README.md рядом с лог файл, потом попробуй").map((w) => w.word);
+	// «с» — однобуквенное, отсекается как и раньше.
+	assert.deepEqual(words, ["Отправь", "мне", "рядом", "лог", "файл", "потом", "попробуй"]);
 });

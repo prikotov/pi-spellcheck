@@ -50,7 +50,7 @@ function renderWithUnderline(editor, width) {
 }
 
 test("editor structure: borders + renderedVisibleLineCount", () => {
-	const editor = makeEditor("скажи превед другу", false);
+	const editor = makeEditor("скажи превет другу", false);
 	const lines = editor.render(80);
 	assert.ok(lines.length >= 3, "top border + content + bottom border");
 	const visible = editor.renderedVisibleLineCount;
@@ -60,26 +60,26 @@ test("editor structure: borders + renderedVisibleLineCount", () => {
 });
 
 test("underline lands inside editor content, borders untouched", () => {
-	const editor = makeEditor("скажи превед другу", false);
+	const editor = makeEditor("скажи превет другу", false);
 	const lines = renderWithUnderline(editor, 80);
 	const contentLine = lines[1];
 	assert.ok(contentLine.includes(UNDERLINE_ON), "underline applied to misspelled word");
 	assert.ok(!contentLine.includes("4mскажи\x1b"), "correct word not underlined");
 	const plain = contentLine.replace(/\x1b\[[0-9;:]*m/g, "");
-	assert.ok(plain.includes("скажи превед другу"), "text content preserved");
+	assert.ok(plain.includes("скажи превет другу"), "text content preserved");
 	assert.ok(!lines[0].includes(UNDERLINE_ON), "top border untouched");
 	assert.ok(!lines[lines.length - 1].includes(UNDERLINE_ON), "bottom border untouched");
 });
 
 test("multiline text underlines on every line", () => {
-	const editor = makeEditor("превед здесь\nи тут превед тоже\nа тут всё хорошо", false);
+	const editor = makeEditor("превет здесь\nи тут превет тоже\nа тут всё хорошо", false);
 	const lines = renderWithUnderline(editor, 80);
 	const withUnderline = lines.filter((l) => l.includes(UNDERLINE_ON));
-	assert.equal(withUnderline.length, 2, "both lines with 'превед' underlined");
+	assert.equal(withUnderline.length, 2, "both lines with 'превет' underlined");
 });
 
 test("focused editor: cursor markers survive underlining", () => {
-	const editor = makeEditor("скажи превед другу", true);
+	const editor = makeEditor("скажи превет другу", true);
 	const lines = renderWithUnderline(editor, 80);
 	const contentLine = lines[1];
 	// Курсор рендерится маркерами pi-tui; они должны остаться на месте.
@@ -92,7 +92,7 @@ test("focused editor: cursor markers survive underlining", () => {
 
 test("long text: only visible (scrolled) content is processed", () => {
 	const filler = Array.from({ length: 30 }, (_, i) => `строка номер ${i} без ошибок вообще`).join("\n");
-	const editor = makeEditor(`превед вверху\n${filler}`, false);
+	const editor = makeEditor(`превет вверху\n${filler}`, false);
 	const lines = renderWithUnderline(editor, 80);
 	// Первый экран: первая строка контента уже прокручена за верх,
 	// подчёркивание не должно падать; количество строк совпадает.
